@@ -24,5 +24,4 @@ Links to papers and guides that helped us:
 
 5) https://www.youtube.com/watch?v=o8C6DxZh8dw
 
-All you need to start our project is just follow steps in ipynb file. But . . . Here an example: 
-Define n as the number of assets. Then
+All you need to start our project is just follow steps in ipynb file. 
