@@ -119,3 +119,148 @@ def create_dataset(Z):
   dataset = pd.DataFrame(new_img, columns = labels)
   return dataset
 
+def fast_PCA(dataset, n_components):
+  """
+  Function computes PCA with n components from correlated GBMs
+  """
+  func = PCA(n_components = n_components)
+  dataset_pca = func.fit_transform(dataset)
+
+  columns = []
+  for i in range(dataset_pca.shape[1]):
+    columns.append(str(i))
+
+  dataset_pca_df = pd.DataFrame(data = dataset_pca
+             , columns = columns)
+
+  return dataset_pca_df
+
+def heston_model_sim(S0, v0, kappa, theta, sigma,T, N, M, Z, ind):
+    """
+    Function computes Monte Carlo simulations for Heston Model for n assets
+    """
+    r = 0.02
+    dt = T/N
+    mu = np.array([0,0])
+    cov_rand = 0.99
+    cov = np.array([[1,cov_rand],
+                    [cov_rand,1]])
+    rng = np.random.default_rng()
+    G = rng.multivariate_normal(mu, cov, (N,M), method='cholesky')
+    S = np.full(shape=(N+1,M), fill_value=S0)
+    v = np.full(shape=(N+1,M), fill_value=v0)
+
+    for i in range(1,N+1):
+        S[i] = S[i-1] * np.exp((r - 0.5*v[i-1])*dt + np.sqrt(v[i-1] * dt) * Z[i-1,:,ind])
+        v[i] = np.maximum(v[i-1] + kappa*(theta-v[i-1])*dt + sigma*np.sqrt(v[i-1]*dt)*G[i-1,:,1],0)
+
+    return S
+
+def heston_model_sim2(S0, v0, kappa, theta, sigma,T, N, M, Z, ind, dataset_df):
+    """
+    Function computes Monte Carlo simulations for Heston Model for assets after PCA
+    """
+    r = 0.02
+    dt = T/N
+    mu = np.array([0,0])
+    cov_rand = 0.99
+    cov = np.array([[1,cov_rand],
+                    [cov_rand,1]])
+    rng = np.random.default_rng()
+    G = rng.multivariate_normal(mu, cov, (N,M), method='cholesky')
+    S = np.full(shape=(N+1,M), fill_value=S0)
+    v = np.full(shape=(N+1,M), fill_value=v0)
+
+    for i in range(1,N+1):
+        S[i] = S[i-1] * np.exp((r - 0.5*v[i-1])*dt + np.sqrt(v[i-1] * dt) * dataset_df[i-1])
+        v[i] = np.maximum(v[i-1] + kappa*(theta-v[i-1])*dt + sigma*np.sqrt(v[i-1]*dt)*G[i-1,:,1],0)
+
+    return S
+
+# Example code for computing Monte Carlo simulations for Heston Model for 7 assets after PCA (as example we take n_components = 3)
+n = 7
+Portfolio = create_portfolio(n)
+Mean_portfolio = create_portfolio_mean(Portfolio)
+Z = create_correlated_GBMs(n)
+dataset = create_dataset(Z)
+principal_breast_Df = fast_PCA(dataset, n_components = 3)
+T = 1.0                
+N = 10000               
+M = 1
+fig, ax1  = plt.subplots(1, 1, figsize=(12,5))
+time = np.linspace(0,T,N+1)
+Means_pca = []
+for j in range(principal_breast_Df.shape[1]):
+  S = heston_model_sim2(Mean_portfolio[0], Mean_portfolio[3], Mean_portfolio[1], Mean_portfolio[2], Mean_portfolio[4],T, N, M, Z, ind = j, principal_breast_Df = principal_breast_Df[str(j)])
+  Means_pca.append(S.mean())
+  ax1.plot(time,S,label = '{}instrument'.format(j))
+
+ax1.set_title('Heston Model Asset Prices')
+ax1.set_xlabel('Time')
+ax1.set_ylabel('Asset Prices')
+plt.show()
+
+# Example code for computing Monte Carlo simulations for Heston Model for 10 assets
+
+fig, ax1  = plt.subplots(1, 1, figsize=(12,5))
+time = np.linspace(0,T,N+1)
+Means = []
+for i in range(len(Portfolio)):
+  S = heston_model_sim(S0 = Portfolio[i][0], v0 = Portfolio[i][3], kappa = Portfolio[i][1], theta = Portfolio[i][2], sigma = Portfolio[i][4],T=T, N=N, M=M, Z=Z, ind = i)
+  Means.append(S.mean())
+  ax1.plot(time,S,label = '{}instrument'.format(i))
+
+ax1.set_title('Heston Model Asset Prices')
+ax1.set_xlabel('Time')
+ax1.set_ylabel('Asset Prices')
+plt.show()
+
+# Let's catch an error
+average = sum(Means) / len(Means)
+average_pca = sum(Means_pca) / len(Means_pca)
+print('Percent Error for Portfolio:', (abs(average - average_pca)/average)*100, '%')
+
+# Now Let's try to do some experiments. First assume we have portfolio of size n = 50 assets. And let's try to compute best n_components for PCA 
+# for simulated portfolio
+# Be careful! It takes about 20 min to compute ! 
+fig, ax1  = plt.subplots(1, 1, figsize=(12,5))
+iterations = []
+errors_total = []
+for k in range(1):
+  errors = []
+  n = 50
+  Portfolio = create_portfolio(n)
+  Mean_portfolio = create_portfolio_mean(Portfolio)
+  Z = create_correlated_GBMs(n)
+  dataset = create_dataset(Z)
+  for i in range(1,50):
+    iterations.append(i)
+    dataset_df = fast_PCA(dataset, n_components = i)
+    T = 1.0
+    N = 10000
+    M = 1
+
+    Means_pca = []
+    for j in range(dataset_df.shape[1]):
+      S = heston_model_sim2(Mean_portfolio[0], Mean_portfolio[3], Mean_portfolio[1], Mean_portfolio[2], Mean_portfolio[4],T, N, M, Z, ind = j, dataset_df = dataset_df[str(j)])
+      Means_pca.append(S.mean())
+
+    Means = []
+    for i in range(len(Portfolio)):
+      S = heston_model_sim(S0 = Portfolio[i][0], v0 = Portfolio[i][3], kappa = Portfolio[i][1], theta = Portfolio[i][2], sigma = Portfolio[i][4],T=T, N=N, M=M, Z=Z, ind = i)
+      Means.append(S.mean())
+
+    average = sum(Means) / len(Means)
+    average_pca = sum(Means_pca) / len(Means_pca)
+    MAPE = abs(average - average_pca)/average
+    errors.append(MAPE)
+
+  errors_total.append(errors)
+
+  plt.plot(iterations, errors)
+  ax1.set_title('Graph of approximation error depending on the number of principal components in PCA for simulated portfolio')
+  ax1.set_xlabel('N_components')
+  ax1.set_ylabel('Percent error')
+
+# Let's take n_components with the lowest error
+print('Best number for n_components:', (errors.index(min(errors))+1))
