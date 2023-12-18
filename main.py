@@ -261,6 +261,68 @@ for k in range(1):
   ax1.set_title('Graph of approximation error depending on the number of principal components in PCA for simulated portfolio')
   ax1.set_xlabel('N_components')
   ax1.set_ylabel('Percent error')
+  #Now lets take n_components = 9 as we got above and run 50 times Monte Carlo simulation to get average error
+# Be careful. It takes about 20 min to compute !
+fig, ax1  = plt.subplots(1, 1, figsize=(12,5))
+iterations = []
+errors = []
+n_components = 9
+for i in range(50):
+  iterations.append(i)
+  dataset_df = fast_PCA(dataset, n_components = n_components)
+  T = 1.0
+  N = 10000
+  M = 1
+
+  Means_pca = []
+  for j in range(dataset_df.shape[1]):
+    S = heston_model_sim2(Mean_portfolio[0], Mean_portfolio[3], Mean_portfolio[1], Mean_portfolio[2], Mean_portfolio[4],T, N, M, Z, ind = j, dataset_df = dataset_df[str(j)])
+    Means_pca.append(S.mean())
+
+  Means = []
+  for i in range(len(Portfolio)):
+    S = heston_model_sim(S0 = Portfolio[i][0], v0 = Portfolio[i][3], kappa = Portfolio[i][1], theta = Portfolio[i][2], sigma = Portfolio[i][4],T=T, N=N, M=M, Z=Z, ind = i)
+    Means.append(S.mean())
+
+  average = sum(Means) / len(Means)
+  average_pca = sum(Means_pca) / len(Means_pca)
+  MAPE = abs(average - average_pca)/average
+  errors.append(MAPE)
+
+plt.plot(iterations, errors)
+ax1.set_title('Graph of approximation error')
+ax1.set_xlabel('Iteration')
+ax1.set_ylabel('Percent error')
+
+print('Average percent error for 50 asset Portfolio after PCA approximation with 9 components:', 100*(sum(errors) / len(errors)), '%')
+
+# Commented out IPython magic to ensure Python compatibility.
+# # Let's plot Monte Carlo paths for portfolio
+# %%time
+# fig, ax1  = plt.subplots(1, 1, figsize=(12,5))
+# for i in range(len(Portfolio)):
+#   S = heston_model_sim(S0 = Portfolio[i][0], v0 = Portfolio[i][3], kappa = Portfolio[i][1], theta = Portfolio[i][2], sigma = Portfolio[i][4],T=T, N=N, M=M, Z=Z, ind = i)
+# 
+#   ax1.plot(time,S,label = '{}instrument'.format(j))
+# ax1.set_title('Heston Model Asset Prices')
+# ax1.set_xlabel('Time')
+# ax1.set_ylabel('Asset Prices')
+# plt.show()
+
+# Commented out IPython magic to ensure Python compatibility.
+# #Let's plot Monte Carlo paths for portfolio after PCA
+# %%time
+# fig, ax1  = plt.subplots(1, 1, figsize=(12,5))
+# for j in range(dataset_df.shape[1]):
+#   S = heston_model_sim2(Mean_portfolio[0], Mean_portfolio[3], Mean_portfolio[1], Mean_portfolio[2], Mean_portfolio[4],T, N, M, Z, ind = j, dataset_df = dataset_df[str(j)])
+# 
+#   ax1.plot(time,S,label = '{}instrument'.format(j))
+# ax1.set_title('Heston Model Asset Prices after PCA')
+# ax1.set_xlabel('Time')
+# ax1.set_ylabel('Asset Prices')
+# plt.show()
+
+# We speeded up our computations from 16.1s to 3.95s using PCA with error about 10%
 
 # Let's take n_components with the lowest error
 print('Best number for n_components:', (errors.index(min(errors))+1))
