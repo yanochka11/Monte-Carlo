@@ -10,8 +10,16 @@ Our solution proposes 4 steps:
 
 Links to papers and guides that helped us:
 
-https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4066115
-https://sas.uwaterloo.ca/~dlmcleis/s906/chapt1-6.pdf
-https://www.informs-sim.org/wsc07papers/107.pdf
-https://arxiv.org/pdf/1903.10795v1.pdf
-https://www.youtube.com/watch?v=o8C6DxZh8dw
+1) https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4066115
+
+
+2) https://sas.uwaterloo.ca/~dlmcleis/s906/chapt1-6.pdf
+
+
+3) https://www.informs-sim.org/wsc07papers/107.pdf
+
+
+4) https://arxiv.org/pdf/1903.10795v1.pdf
+
+
+5) https://www.youtube.com/watch?v=o8C6DxZh8dw
