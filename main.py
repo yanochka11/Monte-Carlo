@@ -200,7 +200,7 @@ ax1.set_xlabel('Time')
 ax1.set_ylabel('Asset Prices')
 plt.show()
 
-# Example code for computing Monte Carlo simulations for Heston Model for 10 assets
+# Example code for computing Monte Carlo simulations for Heston Model for 7 assets
 
 fig, ax1  = plt.subplots(1, 1, figsize=(12,5))
 time = np.linspace(0,T,N+1)
