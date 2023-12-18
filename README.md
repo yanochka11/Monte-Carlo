@@ -9,6 +9,7 @@ Our solution proposes 4 steps:
 4. Use Monte Carlo to simulate processes.
 
 Links to papers and guides that helped us:
+
 https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4066115
 https://sas.uwaterloo.ca/~dlmcleis/s906/chapt1-6.pdf
 https://www.informs-sim.org/wsc07papers/107.pdf
